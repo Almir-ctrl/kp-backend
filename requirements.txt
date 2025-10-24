@@ -1,0 +1,30 @@
+demucs
+Flask==2.3.3
+Flask-CORS==4.0.0
+Flask-SocketIO
+gunicorn==21.2.0
+librosa
+soundfile
+pydub
+werkzeug
+numpy
+# torch, torchaudio, torchvision: install via Dockerfile only for CUDA compatibility for every model except MusicGen
+openai-whisper
+websockets
+scipy
+matplotlib
+scikit-learn
+pandas
+audiocraft
+transformers>=4.39.0
+accelerate
+rq
+redis
+pytest
+google-generativeai
+mutagen
+sentencepiece
+protobuf
+torchcodec
+yt-dlp
+--extra-index-url https://pypi.org/simple

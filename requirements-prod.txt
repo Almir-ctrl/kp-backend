@@ -1,0 +1,19 @@
+# Production Requirements with WebSocket Support
+demucs
+flask
+flask-cors
+flask-socketio
+librosa
+soundfile
+pydub
+werkzeug
+numpy
+pandas
+# torch, torchaudio, torchvision: install via Dockerfile only for CUDA compatibility
+gunicorn
+waitress
+python-dotenv
+openai-whisper
+websockets
+torchcodec
+transformers>=4.39.0
