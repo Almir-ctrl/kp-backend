@@ -1,0 +1,6 @@
+# Optional heavy dependencies for advanced audio analysis and plotting
+# Install these only if you need Essentia (HPCP), sklearn clustering, or
+# plotting support for analysis debugging.
+essentia
+scikit-learn
+matplotlib

@@ -1,0 +1,35 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies for AI models
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    git \
+    wget \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements-prod.txt .
+# Install Python dependencies (including watchdog for file watching)
+RUN pip install --no-cache-dir -r requirements-prod.txt && \
+    pip install --no-cache-dir watchdog
+
+# Copy application code
+COPY . .
+
+# Create directories
+RUN mkdir -p uploads outputs
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV FLASK_APP=Backend/app.py
+ENV DEBUG=False
+ENV PORT=8000
+
+# Expose port
+EXPOSE 8000
+
+# Use the simple production.py approach that's more reliable
+CMD ["python", "production.py"]

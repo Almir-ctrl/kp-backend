@@ -1,0 +1,41 @@
+services:
+  ai-backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - DEBUG=True
+      - FLASK_ENV=development
+      - PORT=5000
+      - CORS_ORIGINS=*
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - ./:/app
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+      - ai_models:/root/.cache
+    command: python app.py
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    # watch:
+    #   - path: .
+    #     action: sync
+    #   - path: ./uploads
+    #     target: /app/uploads
+    #     action: sync
+    #   - path: ./outputs
+    #     target: /app/outputs
+    #     action: sync
+
+volumes:
+  ai_models:

@@ -1,0 +1,1 @@
+This folder contains deployment and environment configuration files (Dockerfiles, docker-compose, deployment scripts, etc.).

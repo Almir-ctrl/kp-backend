@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Enable PowerShell Allow (repo)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/scripts/enable-pwsh-allow.ps1",
+        "-Path",
+        "${workspaceFolder}",
+        "-Force"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+
+      "problemMatcher": []
+    }

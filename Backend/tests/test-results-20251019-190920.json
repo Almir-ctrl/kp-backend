@@ -1,0 +1,47 @@
+[
+  {
+    "Endpoint": "Health Check",
+    "Method": "GET",
+    "Status": 200,
+    "Expected": 200,
+    "Pass": true,
+    "ResponseSize": 277,
+    "Error": null
+  },
+  {
+    "Endpoint": "Server Status",
+    "Method": "GET",
+    "Status": 200,
+    "Expected": 200,
+    "Pass": true,
+    "ResponseSize": 16,
+    "Error": null
+  },
+  {
+    "Endpoint": "Available Models",
+    "Method": "GET",
+    "Status": 200,
+    "Expected": 200,
+    "Pass": true,
+    "ResponseSize": 937,
+    "Error": null
+  },
+  {
+    "Endpoint": "List Songs",
+    "Method": "GET",
+    "Status": 200,
+    "Expected": 200,
+    "Pass": true,
+    "ResponseSize": 432,
+    "Error": null
+  },
+  {
+    "Endpoint": "YouTube Info",
+    "Method": "POST",
+    "Status": 200,
+    "Expected": 200,
+    "Pass": true,
+    "ResponseSize": 793,
+    "Error": null
+  }
+]

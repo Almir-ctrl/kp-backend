@@ -1,0 +1,50 @@
+# Alternative docker-compose for HTTPS with Let's Encrypt (Production)
+# Use this for production with real domain name
+
+version: '3.8'
+
+services:
+  ai-backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile.simple
+    expose:
+      - "8000"
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - PORT=8000
+    volumes:
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+      - ai_models:/root/.cache
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx-prod.conf:/etc/nginx/nginx.conf
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - ai-backend
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --email your-email@example.com --agree-tos --no-eff-email -d yourdomain.com
+
+volumes:
+  ai_models:

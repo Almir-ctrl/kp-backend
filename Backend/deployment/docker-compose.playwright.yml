@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  ai-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - DEBUG=True
+      - FLASK_ENV=development
+      - PORT=5000
+      - CORS_ORIGINS=*
+    volumes:
+      - ./:/app
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+
+  frontend:
+    image: node:18
+    working_dir: /work
+    volumes:
+      - ../lion's-roar-karaoke-studio:/work
+    ports:
+      - "3000:3000"
+    command: /bin/sh -c "npm ci && npm run build && npm run preview -- --port 3000"

@@ -1,0 +1,19 @@
+name: aimusic
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - blis
+  - thinc
+  - spacy>=3.8
+  - av
+  - sentencepiece
+  - einops
+  - pkg-config
+  - cmake
+# Note: PyTorch is intentionally left out so users can choose the correct CUDA-enabled build
+# See docs/CONDA_FALLBACK.md for instructions to install the right pytorch variant for your GPU.
+  - pip:
+    - audiocraft

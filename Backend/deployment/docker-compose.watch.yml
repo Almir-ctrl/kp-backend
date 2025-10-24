@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  rq-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    command: ["sh", "-c", "export REDIS_URL=redis://redis:6379 && python Backend/server/worker.py >> /app/logs/rq-worker.log 2>&1"]
+    depends_on:
+      - redis
+    volumes:
+      - ./:/app
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f Backend/server/worker.py || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - REDIS_URL=redis://redis:6379
+
+  watcher:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    # install watchdog at container start and run watchmedo to auto-restart
+    command: ["sh", "-c", "watchmedo auto-restart --recursive --pattern=\"*.py\" -- python Backend/server/backend_skeleton.py"]
+    depends_on:
+      - redis
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+    environment:
+      - DEBUG=True
+      - REDIS_URL=redis://redis:6379
+
+volumes:
+  redis-data:
+  ai_models:
+  logs:

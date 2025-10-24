@@ -1,0 +1,5 @@
+# Sample YouTube URL list for fetch_youtube_dataset.py
+# Add one URL per line. Lines starting with # are ignored.
+# Example (uncomment and replace with real URLs if desired):
+# https://www.youtube.com/watch?v=EXAMPLE1
+# https://www.youtube.com/watch?v=EXAMPLE2

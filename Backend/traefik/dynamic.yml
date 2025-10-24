@@ -1,0 +1,37 @@
+http:
+  routers:
+    orchestrator:
+      rule: "Host(`orchestrator.local`)"
+      service: orchestrator
+      entryPoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - forward-auth
+
+    demucs:
+      rule: "Host(`demucs.local`)"
+      service: demucs
+      entryPoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - forward-auth
+
+  services:
+    orchestrator:
+      loadBalancer:
+        servers:
+          - url: "http://orchestrator:5000"
+    demucs:
+      loadBalancer:
+        servers:
+          - url: "http://demucs:8000"
+
+middlewares:
+  forward-auth:
+    forwardAuth:
+      address: "http://forward-auth:8000/verify"
+      trustForwardHeader: true
+      authResponseHeaders:
+        - X-Auth-User

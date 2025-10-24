@@ -1,0 +1,50 @@
+services:
+  ai-backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - "8000"  # Internal port only
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=your-production-secret-key-change-this
+      - PORT=8000
+      - WORKERS=2
+      - WORKER_CLASS=eventlet
+      - CORS_ORIGINS=*
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+      - ai_models:/root/.cache
+    restart: unless-stopped
+    runtime: nvidia
+    deploy:
+      resources:
+        limits:
+          memory: 12G
+          cpus: "6"
+        reservations:
+          memory: 6G
+          cpus: "2"
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx-production.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./uploads:/app/uploads:ro  # Read-only access for direct file serving
+    depends_on:
+      - ai-backend
+    restart: unless-stopped
+
+volumes:
+  ai_models:

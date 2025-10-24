@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  nginx:
+    build: ./nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx/certs:/etc/nginx/certs:ro
+    networks:
+      - micro-net
+
+  forward-auth:
+    build: ./services/forward_auth
+    environment:
+      - JWT_SECRET=${MICRO_JWT_SECRET:-changeme}
+    networks:
+      - micro-net
+
+  demucs:
+    build: ./services/demucs
+    environment:
+      - ORCHESTRATOR_CALLBACK=http://orchestrator:5000/notify
+    volumes:
+      - ./uploads:/uploads
+      - ./outputs:/outputs
+    networks:
+      - micro-net
+
+  orchestrator:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./:/app:delegated
+    command: sh -c "pip install fastapi uvicorn && uvicorn server.orchestrator:app --host 0.0.0.0 --port 5000"
+    environment:
+      - API_KEY=${MICRO_AUTH_API_KEY:-changeme}
+    networks:
+      - micro-net
+
+volumes:
+  traefik-letsencrypt:
+
+networks:
+  micro-net:
+    driver: bridge

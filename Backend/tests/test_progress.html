@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Music Separator - Progress Test</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            background: #f8f9ff;
+            border-color: #764ba2;
+        }
+
+        .upload-area.dragging {
+            background: #f0f2ff;
+            border-color: #764ba2;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #667eea;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .stage-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            border-left: 4px solid #ddd;
+            transition: all 0.3s;
+        }
+
+        .stage-item.active {
+            border-left-color: #667eea;
+            background: #f0f2ff;
+        }
+
+        .stage-item.complete {
+            border-left-color: #4caf50;
+            background: #f1f8f4;
+        }
+
+        .stage-item.error {
+            border-left-color: #f44336;
+            background: #fff5f5;
+        }
+
+        .stage-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .stage-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .stage-status {
+            font-size: 12px;
+            color: #999;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stage-item.active .stage-status {
+            color: #667eea;
+        }
+
+        .stage-item.complete .stage-status {
+            color: #4caf50;
+        }
+
+        .stage-item.error .stage-status {
+            color: #f44336;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .stage-message {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .checkmark {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            color: #4caf50;
+        }
+
+        .error-icon {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            color: #f44336;
+        }
+
+        .file-info {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .file-info strong {
+            color: #333;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f1f8f4;
+            border-radius: 10px;
+            border-left: 4px solid #4caf50;
+        }
+
+        .results h3 {
+            color: #4caf50;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .download-links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .download-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background: white;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #667eea;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .download-link:hover {
+            background: #f0f2ff;
+            transform: translateX(5px);
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .connection-status.connected {
+            background: #4caf50;
+            color: white;
+        }
+
+        .connection-status.disconnected {
+            background: #f44336;
+            color: white;
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status disconnected" id="connectionStatus">
+        <div class="pulse"></div>
+        Connecting...
+    </div>
+
+    <div class="container">
+        <h1>🎵 AI Music Separator</h1>
+        <p class="subtitle">Upload audio and watch real-time processing</p>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Click or drag audio file here</div>
+            <div class="upload-hint">Supports MP3, WAV, OGG, FLAC, M4A</div>
+            <input type="file" id="fileInput" accept="audio/*">
+        </div>
+
+        <button id="uploadBtn" disabled>Select a file to upload</button>
+
+        <div id="fileInfo" class="file-info" style="display: none;"></div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="stage-item" id="stageUpload">
+                <div class="stage-header">
+                    <span class="stage-name">📤 Upload</span>
+                    <span class="stage-status">Waiting...</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressUpload"></div>
+                </div>
+                <div class="stage-message" id="messageUpload"></div>
+            </div>
+
+            <div class="stage-item" id="stageSeparation">
+                <div class="stage-header">
+                    <span class="stage-name">🎼 Audio Separation</span>
+                    <span class="stage-status">Waiting...</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressSeparation"></div>
+                </div>
+                <div class="stage-message" id="messageSeparation"></div>
+            </div>
+
+            <div class="stage-item" id="stageTranscription">
+                <div class="stage-header">
+                    <span class="stage-name">📝 Transcription</span>
+                    <span class="stage-status">Waiting...</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressTranscription"></div>
+                </div>
+                <div class="stage-message" id="messageTranscription"></div>
+            </div>
+
+            <div class="stage-item" id="stageKaraoke">
+                <div class="stage-header">
+                    <span class="stage-name">🎤 Karaoke Generation</span>
+                    <span class="stage-status">Waiting...</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressKaraoke"></div>
+                </div>
+                <div class="stage-message" id="messageKaraoke"></div>
+            </div>
+        </div>
+
+        <div id="results" style="display: none;"></div>
+    </div>
+
+    <script>
+        const socket = io('http://localhost:5000');
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const fileInfo = document.getElementById('fileInfo');
+        const progressContainer = document.getElementById('progressContainer');
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        let selectedFile = null;
+        let currentFileId = null;
+
+        // Socket connection status
+        socket.on('connect', () => {
+            connectionStatus.className = 'connection-status connected';
+            connectionStatus.innerHTML = '<div class="pulse"></div> Connected';
+            console.log('WebSocket connected');
+        });
+
+        socket.on('disconnect', () => {
+            connectionStatus.className = 'connection-status disconnected';
+            connectionStatus.innerHTML = '<div class="pulse"></div> Disconnected';
+            console.log('WebSocket disconnected');
+        });
+
+        // Listen for progress updates
+        socket.on('processing_progress', (data) => {
+            console.log('Progress update:', data);
+            updateProgress(data);
+        });
+
+        // Upload area interactions
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragging');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragging');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragging');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            selectedFile = file;
+            fileInfo.style.display = 'block';
+            fileInfo.innerHTML = `
+                <strong>Selected file:</strong> ${file.name}<br>
+                <strong>Size:</strong> ${(file.size / (1024 * 1024)).toFixed(2)} MB<br>
+                <strong>Type:</strong> ${file.type}
+            `;
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Start Processing';
+        }
+
+        uploadBtn.addEventListener('click', () => {
+            if (selectedFile) {
+                uploadFile(selectedFile);
+            }
+        });
+
+        async function uploadFile(file) {
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Processing...';
+            progressContainer.classList.add('active');
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('auto_process', 'true');
+
+            try {
+                const response = await fetch('http://localhost:5000/upload?model=demucs', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log('Upload complete:', result);
+                currentFileId = result.file_id;
+                
+                if (result.status === 'completed') {
+                    showResults(result);
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Upload failed: ' + error.message);
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Try Again';
+            }
+        }
+
+        function updateProgress(data) {
+            const stage = data.stage;
+            const progress = data.progress;
+            const message = data.message;
+            const error = data.error;
+
+            const stageElement = document.getElementById(`stage${capitalize(stage)}`);
+            const progressBar = document.getElementById(`progress${capitalize(stage)}`);
+            const messageElement = document.getElementById(`message${capitalize(stage)}`);
+            const statusElement = stageElement?.querySelector('.stage-status');
+
+            if (!stageElement) return;
+
+            // Update progress bar
+            if (progressBar) {
+                progressBar.style.width = progress + '%';
+            }
+
+            // Update message
+            if (messageElement) {
+                messageElement.textContent = message;
+            }
+
+            // Update stage state
+            if (error) {
+                stageElement.className = 'stage-item error';
+                if (statusElement) {
+                    statusElement.innerHTML = '<span class="error-icon">❌</span> Failed';
+                }
+            } else if (progress === 100) {
+                stageElement.className = 'stage-item complete';
+                if (statusElement) {
+                    statusElement.innerHTML = '<span class="checkmark">✓</span> Complete';
+                }
+            } else if (progress > 0) {
+                stageElement.className = 'stage-item active';
+                if (statusElement) {
+                    statusElement.innerHTML = '<span class="spinner"></span> Processing...';
+                }
+            }
+
+            // If all complete, enable button
+            if (stage === 'complete') {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Process Another File';
+            }
+        }
+
+        function capitalize(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        function showResults(data) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+
+            let html = '<h3>✅ Processing Complete!</h3><div class="download-links">';
+
+            // Add track downloads
+            if (data.tracks && data.tracks.length > 0) {
+                data.tracks.forEach(track => {
+                    html += `
+                        <a href="http://localhost:5000${track.download_url}" class="download-link" download>
+                            <span>🎵 ${track.name}</span>
+                            <span>⬇️ Download</span>
+                        </a>
+                    `;
+                });
+            }
+
+            // Add karaoke download
+            if (data.karaoke && data.karaoke.status === 'completed') {
+                html += `
+                    <a href="http://localhost:5000${data.karaoke.download_url}" class="download-link" download>
+                        <span>🎤 Karaoke (${data.karaoke.total_lines} lines)</span>
+                        <span>⬇️ Download</span>
+                    </a>
+                `;
+            }
+
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

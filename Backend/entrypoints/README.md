@@ -1,0 +1,1 @@
+This folder contains main entry point scripts for running the backend.

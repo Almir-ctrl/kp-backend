@@ -1,0 +1,52 @@
+# Production Dockerfile for AI Backend
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies for AI models and production
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    git \
+    wget \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements-prod.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements-prod.txt
+
+# Install additional production dependencies
+RUN pip install --no-cache-dir \
+    gunicorn \
+    eventlet \
+    gevent \
+    prometheus-client \
+    psutil
+
+# Copy application code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p uploads outputs logs
+
+# Set proper permissions
+RUN chmod +x gunicorn_production.conf.py
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Production command with Gunicorn
+CMD ["gunicorn", "--config", "gunicorn_production.conf.py", "wsgi_production:app"]
